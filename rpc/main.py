@@ -14,7 +14,7 @@ class RPC:
     @web.rpc(f'{integration_name}__predict')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def predict(self, project_id, settings, text_prompt):
-        """ Prepare dusty config for this scanner """
+        """ Predict function """
         try:
             settings = IntegrationModel.parse_obj(settings)
         except ValidationError as e:
@@ -30,6 +30,8 @@ class RPC:
             response = openai.ChatCompletion.create(
                 engine=settings.model_name,
                 temperature=settings.temperature,
+                max_tokens=settings.max_tokens,
+                top_p=settings.top_p,
                 messages=[
                     {
                         "role": "assistant",
