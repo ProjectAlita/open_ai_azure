@@ -11,13 +11,14 @@ class IntegrationModel(BaseModel):
     model_name: str = 'gpt-35-turbo'
     api_version: str = '2023-03-15-preview'
     api_base: str = "https://ai-proxy.lab.epam.com"
+    api_type: str = "azure"
     temperature: float = 0
     max_tokens: int = 7
     top_p: float = 0.8
 
     def check_connection(self):
         openai.api_key = self.api_token.unsecret(session_project.get())
-        openai.api_type = "azure"
+        openai.api_type = self.api_type
         openai.api_version = self.api_version
         openai.api_base = self.api_base
         try:

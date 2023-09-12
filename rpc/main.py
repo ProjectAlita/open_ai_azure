@@ -22,6 +22,10 @@ class RPC:
 
         try:
             api_key = SecretField.parse_obj(settings.api_token).unsecret(project_id)
+            openai.api_key = api_key
+            openai.api_type = settings.api_type
+            openai.api_base = settings.api_base
+            openai.api_version = settings.api_version
 
             response = openai.ChatCompletion.create(
                 engine=settings.model_name,
@@ -33,11 +37,7 @@ class RPC:
                         "role": "assistant",
                         "content": text_prompt,
                     }
-                ],
-                api_type='azure',
-                api_base=settings.api_base,
-                api_key=api_key,
-                api_version=settings.api_version
+                ]
             )
             result = response['choices'][0]['message']['content']
         except Exception as e:
