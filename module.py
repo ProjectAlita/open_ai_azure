@@ -38,6 +38,7 @@ class Module(module.ModuleModel):
         self.descriptor.init_slots()
         self.descriptor.init_rpcs()
         self.descriptor.init_events()
+        self.descriptor.init_api()
 
         self.context.rpc_manager.call.integrations_register_section(
             name=SECTION_NAME,
