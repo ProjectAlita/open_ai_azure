@@ -1,2 +1,3 @@
 {% set integration_name = 'open_ai_azure' %}
+<script src="{{ url_for('%s.static' | format(integration_name), filename='js/OpenAiAzureModelsButton.js') }}"></script>
 <script src="{{ url_for('%s.static' | format(integration_name), filename='js/integrations.js') }}"></script>

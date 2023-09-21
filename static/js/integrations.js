@@ -2,6 +2,9 @@ const OpenAiAzureIntegrationModal = {
     delimiters: ['[[', ']]'],
     props: ['instance_name', 'display_name', 'logo_src', 'section_name'],
     emits: ['update'],
+    components: {
+        'open-ai-azure-models-button': OpenAiAzureModelsButton,
+    },
     template: `
 <div
         :id="modal_id"
@@ -23,7 +26,7 @@ const OpenAiAzureIntegrationModal = {
         <template #body>
             <div class="form-group">
                 <h9>Secret API Key</h9>
-                  <SecretFieldInput 
+                  <SecretFieldInput
                         v-model="api_token"
                         placeholder="Open AI Token"
                  />
@@ -32,7 +35,7 @@ const OpenAiAzureIntegrationModal = {
             <div class="form-group">
                 <p class="font-h5 font-semibold">API Base</p>
                 <div class="custom-input custom-input__sm mb-3 mt-1" :class="{ 'invalid-input': isInvalid }">
-                    <input type="text" placeholder="API Base" 
+                    <input type="text" placeholder="API Base"
                     v-model="api_base">
                     <span class="input_error-msg"></span>
                 </div>
@@ -40,11 +43,29 @@ const OpenAiAzureIntegrationModal = {
             <div class="form-group">
                 <p class="font-h5 font-semibold">API Version</p>
                 <div class="custom-input custom-input__sm mb-3 mt-1" :class="{ 'invalid-input': isInvalid }">
-                    <input type="text" placeholder="API Version" 
+                    <input type="text" placeholder="API Version"
                     v-model="api_version">
                     <span class="input_error-msg"></span>
                 </div>
             </div>
+            <div>
+                <span class="font-h5 font-semibold">Models:</span>
+            </div>
+            <div class="invalid-feedback d-block">[[ error.models ]]</div>
+            <div>
+                <button class="btn btn btn-painted mr-1 rounded-pill mb-1" v-for="model in models"
+                    >[[ model ]]
+                </button>
+            </div>
+            <open-ai-azure-models-button
+                ref="OpenAiAzureIntegrationModal"
+                :pluginName="pluginName"
+                :error="error.check_connection"
+                :body_data="body_data"
+                v-model:models="models"
+                @handleError="handleError"
+            >
+            </open-ai-azure-models-button>
         </template>
         <template #footer>
             <test-connection-button
@@ -68,6 +89,11 @@ const OpenAiAzureIntegrationModal = {
             this.clear()
         })
     },
+    watch: {
+        api_base(newState, oldState) {
+            this.models = []
+        }
+    },
     computed: {
         project_id() {
             return getSelectedProjectId()
@@ -77,6 +103,7 @@ const OpenAiAzureIntegrationModal = {
                 api_token,
                 api_base,
                 api_version,
+                models,
                 project_id,
                 config,
                 is_default,
@@ -87,6 +114,7 @@ const OpenAiAzureIntegrationModal = {
                 api_token,
                 api_base,
                 api_version,
+                models,
                 project_id,
                 config,
                 is_default,
@@ -104,6 +132,7 @@ const OpenAiAzureIntegrationModal = {
     methods: {
         clear() {
             Object.assign(this.$data, this.initialState())
+            this.$refs.OpenAiAzureIntegrationModal.clear();
         },
         load(stateData) {
             Object.assign(this.$data, stateData)
@@ -118,6 +147,7 @@ const OpenAiAzureIntegrationModal = {
             this.delete()
         },
         create() {
+            if (this.has_validation_error()) return;
             this.is_fetching = true
             fetch(this.api_url + this.pluginName, {
                 method: 'POST',
@@ -147,6 +177,7 @@ const OpenAiAzureIntegrationModal = {
             }
         },
         update() {
+            if (this.has_validation_error()) return;
             this.is_fetching = true
             fetch(this.api_url + this.id, {
                 method: 'PUT',
@@ -174,8 +205,8 @@ const OpenAiAzureIntegrationModal = {
                 } else {
                     this.handleError(response)
                     alertMain.add(`
-                        Deletion error. 
-                        <button class="btn btn-primary" 
+                        Deletion error.
+                        <button class="btn btn-primary"
                             onclick="vueVm.registered_components.${this.instance_name}.modal.modal('show')"
                         >
                             Open modal
@@ -184,12 +215,21 @@ const OpenAiAzureIntegrationModal = {
                 }
             })
         },
-
+        is_empty_field(value) {
+            return value.length === 0
+        },
+        has_validation_error() {
+            if (this.is_empty_field(this.models)) {
+                this.error.models = 'At least one model is required'
+                return true
+            }
+        },
         initialState: () => ({
             modal_style: {'height': '100px', 'border': ''},
             api_token: "",
             api_base: "https://ai-proxy.lab.epam.com",
             api_version: "2023-03-15-preview",
+            models: [],
             is_default: false,
             is_fetching: false,
             config: {},
