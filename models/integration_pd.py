@@ -31,6 +31,7 @@ class IntegrationModel(BaseModel):
     temperature: float = 0
     max_tokens: int = 7
     top_p: float = 0.8
+    stream: bool = False
 
     @root_validator(pre=True)
     def prepare_model_list(cls, values):

@@ -32,13 +32,38 @@ def _prepare_conversation(prompt_struct):
 
     return conversation
 
-def _prepare_result(response):
+
+def prepare_result(response):
     structured_result = {'messages': []}
     structured_result['messages'].append({
         'type': 'text',
         'content': response['choices'][0]['message']['content']
     })
     return structured_result
+
+
+def prepare_stream_result(response):
+    response = list(response)
+    if not response:
+        return {'type': "text", "content": ""}
+     
+    is_image = "diffusion" in response[0]['model'] 
+    result = dict()
+    if is_image:
+        result['type'] = "image"
+        result['content'] = []
+    else:
+        result['type'] = "text"
+        result['content'] = ""
+    for chunk in response:
+        if is_image:
+            attachments = chunk['choices'][0]['delta'].get('custom_content', {}).get('attachments', tuple())
+            for attachment in attachments:
+                if attachment.get('title') == 'image':
+                    result['content'].append(attachment)
+        else:
+            result['content'] += chunk['choices'][0]['delta'].get('content', "")
+    return result
 
 
 class RPC:
@@ -64,21 +89,25 @@ class RPC:
 
             conversation = _prepare_conversation(prompt_struct)
 
-            response = openai.ChatCompletion.create(
-                engine=settings.model_name,
-                temperature=settings.temperature,
-                max_tokens=settings.max_tokens,
-                top_p=settings.top_p,
-                messages=conversation
-            )
-
-            result = _prepare_result(response)
+            stream = settings.stream
+            params = {
+                'engine': settings.model_name,
+                'temperature': settings.temperature,
+                'top_p': settings.top_p,
+                'messages': conversation,
+            }
+            if stream:
+                params['stream'] = stream
+            else:
+                params['max_tokens'] = settings.max_tokens
+            response = openai.ChatCompletion.create(**params)
+            result = prepare_stream_result(response) if stream else prepare_result(response)
 
         except Exception as e:
             log.error(str(e))
             return {"ok": False, "error": f"{str(e)}"}
-
         return {"ok": True, "response": result}
+    
 
     @web.rpc(f'{integration_name}__parse_settings')
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -88,6 +117,7 @@ class RPC:
         except ValidationError as e:
             return {"ok": False, "error": e}
         return {"ok": True, "item": settings}
+
 
     @web.rpc(f'{integration_name}_set_models', 'set_models')
     @rpc_tools.wrap_exceptions(RuntimeError)
