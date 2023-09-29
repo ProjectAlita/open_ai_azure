@@ -15,6 +15,7 @@ class IntegrationModel(BaseModel):
     temperature: float = 0
     max_tokens: int = 7
     top_p: float = 0.8
+    stream: bool = False
 
     def check_connection(self):
         import openai
