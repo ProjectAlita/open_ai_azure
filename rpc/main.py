@@ -32,17 +32,14 @@ def _prepare_conversation(prompt_struct):
 
     return conversation
 
+
 def prepare_result(response):
-    if attachments := response['choices'][0]['message'].get('custom_content', {}).get('attachments'):
-        result = {
-            'type': 'image',
-        }
-        for attachment in attachments:
-            if attachment.get('title') == 'image':
-                result.setdefault('content', []).append(attachment)
-        return result
-    result = {'type': 'text', 'content': response['choices'][0]['message']['content']}
-    return result
+    structured_result = {'messages': []}
+    structured_result['messages'].append({
+        'type': 'text',
+        'content': response['choices'][0]['message']['content']
+    })
+    return structured_result
 
 
 def prepare_stream_result(response):
@@ -91,6 +88,7 @@ class RPC:
             openai.api_version = settings.api_version
 
             conversation = _prepare_conversation(prompt_struct)
+
             stream = settings.stream
             params = {
                 'engine': settings.model_name,
@@ -104,6 +102,7 @@ class RPC:
                 params['max_tokens'] = settings.max_tokens
             response = openai.ChatCompletion.create(**params)
             result = prepare_stream_result(response) if stream else prepare_result(response)
+
         except Exception as e:
             log.error(str(e))
             return {"ok": False, "error": f"{str(e)}"}
