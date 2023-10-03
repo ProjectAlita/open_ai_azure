@@ -3,7 +3,7 @@ from pylon.core.tools import web
 from traceback import format_exc
 
 from tools import rpc_tools
-from ..models.integration_pd import IntegrationModel, AzureOpenAISettings
+from ..models.integration_pd import AIModel, AzureOpenAISettings
 from ...integrations.models.pd.integration import SecretField
 from ..utils import predict_chat, predict_text
 from pydantic import ValidationError
@@ -62,4 +62,5 @@ class RPC:
             models = []
         if models:
             models = models.get('data', [])
+            models = [AIModel(**model).dict() for model in models]
         return models

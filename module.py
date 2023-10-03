@@ -16,10 +16,30 @@
 #   limitations under the License.
 
 """ Module """
+import json
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import module  # pylint: disable=E0611,E0401
 
+from tools import VaultClient  # pylint: disable=E0611,E0401
+
 from .models.integration_pd import IntegrationModel
+
+
+TOKEN_LIMITS = {
+    'text-embedding-ada-002': None,
+    'gpt-35-turbo': 4096,
+    'gpt-35-turbo-16k': 16384,
+    'gpt-4': 8192,
+    'gpt-4-32k': 32768,
+    'chat-bison@001': 8192,
+    'ai21.j2-grande-instruct': 8191,
+    'ai21.j2-jumbo-instruct': 8191,
+    'anthropic.claude-instant-v1': 100000,
+    'anthropic.claude-v1': 100000,
+    'anthropic.claude-v2': 100000,
+    'stability.stable-diffusion-xl': 77,
+    'gpt-35-turbo-instruct': 4097
+}
 
 
 class Module(module.ModuleModel):
@@ -49,6 +69,13 @@ class Module(module.ModuleModel):
             section=SECTION_NAME,
             settings_model=IntegrationModel,
         )
+
+        vault_client = VaultClient()
+        secrets = vault_client.get_all_secrets()
+        if 'open_ai_azure_token_limits' not in secrets:
+            secrets['open_ai_azure_token_limits'] = json.dumps(TOKEN_LIMITS)
+            vault_client.set_secrets(secrets)
+
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """
