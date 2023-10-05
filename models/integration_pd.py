@@ -21,7 +21,7 @@ class CapabilitiesModel(BaseModel):
 
 class AIModel(BaseModel):
     id: str
-    name: str
+    name: Optional[str]
     capabilities: CapabilitiesModel = CapabilitiesModel()
     token_limit: Optional[int]
 
@@ -55,6 +55,10 @@ class IntegrationModel(BaseModel):
         if models and isinstance(models[0], str):
             values['models'] = [AIModel(id=model, name=model).dict(by_alias=True) for model in models]
         return values
+
+    @property
+    def token_limit(self):
+        return next((model.token_limit for model in self.models if model.id == self.model_name), 8096)
 
     def check_connection(self):
         import openai

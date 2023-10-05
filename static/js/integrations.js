@@ -74,7 +74,7 @@ const OpenAiAzureIntegrationModal = {
                         <input type="checkbox" v-model="model.capabilities.embeddings" disabled>
                     </td>
                     <td>
-                        <span class="font-h5">[[ model.max_tokens ]]</span>
+                        <span class="font-h5">[[ model.token_limit ]]</span>
                     </td>
                     <td>
                         <button class="icon__18x18 icon-delete icon__strict-color mr-2" @click="deleteModel(index)"></button>
