@@ -57,9 +57,10 @@ def limit_conversation(
 
         context_tokens = num_tokens_from_messages(conversation['context'], model_name)
         remaining_tokens -= context_tokens
+        limited_conversation.extend(conversation['context'])
+
         if remaining_tokens < 0:
             return limited_conversation
-        limited_conversation.extend(conversation['context'])
 
         input_tokens = num_tokens_from_messages(conversation['input'], model_name)
         remaining_tokens -= input_tokens
