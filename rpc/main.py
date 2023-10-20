@@ -5,7 +5,7 @@ from traceback import format_exc
 from tools import rpc_tools
 from ..models.integration_pd import AIModel, AzureOpenAISettings
 from ...integrations.models.pd.integration import SecretField
-from ..utils import predict_chat, predict_text
+from ..utils import predict_chat, predict_text, predict_chat_from_request, predict_from_request
 from pydantic import ValidationError
 
 
@@ -34,6 +34,30 @@ class RPC:
 
         return {"ok": True, "response": result}
 
+
+    @web.rpc(f'{integration_name}__chat_completion')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def chat_completion(self, project_id, settings, request_data):
+        """ Chat completion function """
+        try:
+            result = predict_chat_from_request(project_id, settings, request_data)
+        except Exception as e:
+            log.error(str(e))
+            return {"ok": False, "error": f"{str(e)}"}
+
+        return {"ok": True, "response": result}
+
+    @web.rpc(f'{integration_name}__completion')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def completion(self, project_id, settings, request_data):
+        """ Completion function """
+        try:
+            result = predict_from_request(project_id, settings, request_data)
+        except Exception as e:
+            log.error(str(e))
+            return {"ok": False, "error": f"{str(e)}"}
+
+        return {"ok": True, "response": result}
 
     @web.rpc(f'{integration_name}__parse_settings')
     @rpc_tools.wrap_exceptions(RuntimeError)

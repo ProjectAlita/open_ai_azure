@@ -1,9 +1,20 @@
 from collections import deque
 import tiktoken
 from .models.integration_pd import IntegrationModel
+from .models.request_body import ChatCompletionRequestBody, CompletionRequestBody
 
 from pylon.core.tools import log
 # from ..integrations.models.pd.integration import SecretField
+
+
+def init_openai(settings, project_id):
+    import openai
+    api_key = settings.api_token.unsecret(project_id)
+    openai.api_key = api_key
+    openai.api_type = settings.api_type
+    openai.api_version = settings.api_version
+    openai.api_base = settings.api_base
+    return openai
 
 
 def num_tokens_from_messages(messages: list, model: str):
@@ -57,10 +68,11 @@ def limit_conversation(
 
         context_tokens = num_tokens_from_messages(conversation['context'], model_name)
         remaining_tokens -= context_tokens
-        limited_conversation.extend(conversation['context'])
 
         if remaining_tokens < 0:
             return limited_conversation
+
+        limited_conversation.extend(conversation['context'])
 
         input_tokens = num_tokens_from_messages(conversation['input'], model_name)
         remaining_tokens -= input_tokens
@@ -111,15 +123,16 @@ def prepare_conversation(
     if prompt_struct.get('examples'):
         for example in prompt_struct['examples']:
             conversation['examples'].append({
-                "role": "system",
+                "role": "user",
                 "name": "example_user",
                 "content": example['input']
             })
-            conversation['examples'].append({
-                "role": "system",
-                "name": "example_assistant",
-                "content": example['output']
-            })
+            if example.get("output", None):
+                conversation['examples'].append({
+                    "role": "assistant",
+                    "name": "example_assistant",
+                    "content": example['output']
+                })
     if prompt_struct.get('chat_history'):
         for message in prompt_struct['chat_history']:
             conversation['chat_history'].append({
@@ -167,6 +180,28 @@ def _prepare_attachments(attachments):
                 'content': content
             })
     return structured_attachments
+
+
+def limit_messages(messages: list, model_name: str, max_response_tokens: int, token_limit: int) -> list:
+    conversation = {
+        'context': [],
+        'examples': [],
+        'chat_history': [],
+        'input': []
+    }
+    for idx, message in enumerate(messages):
+        if message['role'] == 'system' and not message.get('name'):
+            conversation['context'].append(message)
+        if message.get("name") in ("example_user", "example_assistant"):
+            conversation['examples'].append(message)
+        if message['role'] == 'user' and idx != len(messages) - 1:
+            conversation['chat_history'].append(message)
+        if message['role'] == 'assistant':
+            conversation['chat_history'].append(message)
+    if messages[-1]['role'] == 'user':
+        conversation['input'].append(messages[-1])
+
+    return limit_conversation(conversation, model_name, max_response_tokens, token_limit)
 
 
 def prepare_result(response):
@@ -219,15 +254,8 @@ def prepare_stream_result(response):
 
 
 def predict_chat(project_id: int, settings: dict, prompt_struct: dict) -> str:
-    import openai
-
     settings = IntegrationModel.parse_obj(settings)
-
-    api_key = settings.api_token.unsecret(project_id)
-    openai.api_key = api_key
-    openai.api_type = settings.api_type
-    openai.api_version = settings.api_version
-    openai.api_base = settings.api_base
+    openai = init_openai(settings, project_id)
 
     stream = settings.stream
     token_limit = settings.token_limit
@@ -251,16 +279,31 @@ def predict_chat(project_id: int, settings: dict, prompt_struct: dict) -> str:
     return prepare_stream_result(response) if stream else prepare_result(response)
 
 
-def predict_text(project_id: int, settings: dict, prompt_struct: dict) -> str:
-    import openai
-
+def predict_chat_from_request(project_id: int, settings: dict, request_data: dict) -> str:
+    params = ChatCompletionRequestBody.validate(request_data).dict(exclude_unset=True)
     settings = IntegrationModel.parse_obj(settings)
+    openai = init_openai(settings, project_id)
 
-    api_key = settings.api_token.unsecret(project_id)
-    openai.api_key = api_key
-    openai.api_type = settings.api_type
-    openai.api_version = settings.api_version
-    openai.api_base = settings.api_base
+    token_limit = settings.get_token_limit(params['deployment_id'])
+    max_tokens = params.get('max_tokens', 0)
+    if params.get('messages'):
+        params['messages'] = limit_messages(
+            params['messages'], params['deployment_id'], max_tokens, token_limit
+            )
+
+    return openai.ChatCompletion.create(**params)
+
+
+def predict_from_request(project_id: int, settings: dict, request_data: dict) -> str:
+    params = CompletionRequestBody.validate(request_data).dict(exclude_unset=True)
+    settings = IntegrationModel.parse_obj(settings)
+    openai = init_openai(settings, project_id)
+    return openai.Completion.create(**params)
+
+
+def predict_text(project_id: int, settings: dict, prompt_struct: dict) -> str:
+    settings = IntegrationModel.parse_obj(settings)
+    openai = init_openai(settings, project_id)
 
     text_prompt = prerare_text_prompt(prompt_struct)
 
