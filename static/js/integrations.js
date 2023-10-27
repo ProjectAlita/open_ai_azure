@@ -159,7 +159,6 @@ const OpenAiAzureIntegrationModal = {
             this.$refs.OpenAiAzureIntegrationModal.clear();
         },
         load(stateData) {
-            console.log(stateData)
             Object.assign(this.$data, stateData)
         },
         handleEdit(data) {
