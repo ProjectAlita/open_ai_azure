@@ -113,11 +113,11 @@ const OpenAiAzureIntegrationModal = {
             this.clear()
         })
     },
-    watch: {
-        api_base(newState, oldState) {
-            this.models = []
-        }
-    },
+    // watch: {
+    //     api_base(newState, oldState) {
+    //         this.models = []
+    //     }
+    // },
     computed: {
         project_id() {
             return getSelectedProjectId()
@@ -159,6 +159,7 @@ const OpenAiAzureIntegrationModal = {
             this.$refs.OpenAiAzureIntegrationModal.clear();
         },
         load(stateData) {
+            console.log(stateData)
             Object.assign(this.$data, stateData)
         },
         handleEdit(data) {
