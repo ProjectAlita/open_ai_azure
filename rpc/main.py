@@ -72,20 +72,31 @@ class RPC:
     @web.rpc(f'{integration_name}_set_models', 'set_models')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def set_models(self, payload: dict):
-        from openai import Model
-
         api_key = SecretField.parse_obj(payload['settings'].get('api_token', {})).unsecret(payload.get('project_id'))
         api_type = payload['settings'].get('api_type')
         api_base = payload['settings'].get('api_base')
         api_version = payload['settings'].get('api_version')
         try:
+            from openai import Model
             models = Model.list(
                 api_key=api_key, api_base=api_base, api_type=api_type, api_version=api_version
                 )
         except Exception as e:
-            log.error(str(e))
-            models = []
+            try:
+                from openai import OpenAI
+                client = OpenAI(
+                    api_key=api_key,
+                    base_url=api_base,
+                    # api_type and api_version are removed in openai >= 1.0.0
+                )
+                models = client.models.list()
+            except Exception as e:
+                log.error(str(e))
+                models = []
         if models:
-            models = models.get('data', [])
-            models = [AIModel(**model).dict() for model in models]
+            try:
+                models = models.get('data', [])
+                models = [AIModel(**model).dict() for model in models]
+            except:
+                models = [AIModel(id=model.id, name=model.name, capabilities=model.capabilities, token_limit=model.token_limit).dict() for model in models]
         return models
