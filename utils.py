@@ -1,3 +1,5 @@
+# FIXME: ChatCompletion and Completion are not adapted for managed identity and openai > 1.0.0
+
 from collections import deque
 from openai import ChatCompletion, Completion
 import tiktoken

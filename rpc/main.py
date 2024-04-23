@@ -77,18 +77,30 @@ class RPC:
         api_base = payload['settings'].get('api_base')
         api_version = payload['settings'].get('api_version')
         try:
+            # openai < 1.0.0
             from openai import Model
             models = Model.list(
                 api_key=api_key, api_base=api_base, api_type=api_type, api_version=api_version
                 )
         except Exception as e:
+            # openai >= 1.0.0
             try:
-                from openai import OpenAI
-                client = OpenAI(
-                    api_key=api_key,
-                    base_url=api_base,
-                    # api_type and api_version are removed in openai >= 1.0.0
-                )
+                from openai import AzureOpenAI
+                #
+                if self.ad_token_provider is None:
+                    client = AzureOpenAI(
+                        base_url=api_base,
+                        api_version=api_version,
+                        api_key=api_key,
+                        # api_type is removed in openai >= 1.0.0
+                    )
+                else:
+                    client = AzureOpenAI(
+                        base_url=api_base,
+                        api_version=api_version,
+                        azure_ad_token_provider=self.ad_token_provider,
+                    )
+                #
                 models = client.models.list()
             except Exception as e:
                 log.error(str(e))
@@ -98,5 +110,41 @@ class RPC:
                 models = models.get('data', [])
                 models = [AIModel(**model).dict() for model in models]
             except:
-                models = [AIModel(id=model.id, name=model.name, capabilities=model.capabilities, token_limit=model.token_limit).dict() for model in models]
+                try:
+                    models = [AIModel(id=model.id, name=model.name, capabilities=model.capabilities, token_limit=model.token_limit).dict() for model in models]
+                except:
+                    client_models = models
+                    models = []
+                    #
+                    for model in client_models:
+                        model_id = model.id
+                        model_name = model.model
+                        #
+                        model_capabilities = {
+                            "completion": model.capabilities["completion"],
+                            "chat_completion": model.capabilities["chat_completion"],
+                            "embeddings": model.capabilities["embeddings"],
+                        }
+                        #
+                        try:
+                            model_token_limit = model.limits["max_total_tokens"]
+                        except:  # pylint: disable=W0702
+                            model_token_limit = None
+                        #
+                        if model_token_limit is None:
+                            ai_model = AIModel(
+                                id=model_id,
+                                name=model_name,
+                                capabilities=model_capabilities,
+                            ).dict()
+                        else:
+                            ai_model = AIModel(
+                                id=model_id,
+                                name=model_name,
+                                capabilities=model_capabilities,
+                                token_limit=model_token_limit,
+                            ).dict()
+                        #
+                        models.append(ai_model)
+        #
         return models

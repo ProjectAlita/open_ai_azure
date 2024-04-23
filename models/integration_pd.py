@@ -71,18 +71,33 @@ class IntegrationModel(BaseModel):
         api_version = self.api_version
         api_base = self.api_base
         try:
+            # openai < 1.0.0
             from openai import Model
             Model.list(
                 api_key=api_key, api_base=api_base, api_type=api_type, api_version=api_version
                 )
         except Exception as e:
+            # openai >= 1.0.0
             try:
-                from openai import OpenAI
-                client = OpenAI(
-                    api_key=api_key,
-                    base_url=api_base,
-                    # api_type and api_version are removed in openai >= 1.0.0
-                )
+                from openai import AzureOpenAI
+                #
+                from tools import context
+                module = context.module_manager.module.open_ai_azure
+                #
+                if module.ad_token_provider is None:
+                    client = AzureOpenAI(
+                        base_url=api_base,
+                        api_version=api_version,
+                        api_key=api_key,
+                        # api_type is removed in openai >= 1.0.0
+                    )
+                else:
+                    client = AzureOpenAI(
+                        base_url=api_base,
+                        api_version=api_version,
+                        azure_ad_token_provider=module.ad_token_provider,
+                    )
+                #
                 client.models.list()
             except Exception as e:
                 log.error(e)

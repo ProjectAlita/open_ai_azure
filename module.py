@@ -20,6 +20,8 @@ import json
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import module  # pylint: disable=E0611,E0401
 
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider  # pylint: disable=E0401
+
 from tools import VaultClient  # pylint: disable=E0611,E0401
 
 from .models.integration_pd import IntegrationModel
@@ -48,18 +50,20 @@ class Module(module.ModuleModel):
     def __init__(self, context, descriptor):
         self.context = context
         self.descriptor = descriptor
+        #
+        self.ad_token_provider = None
 
     def init(self):
         """ Init module """
         log.info('Initializing AI module')
         SECTION_NAME = 'ai'
-
+        #
         self.descriptor.init_blueprint()
         self.descriptor.init_slots()
         self.descriptor.init_rpcs()
         self.descriptor.init_events()
         self.descriptor.init_api()
-
+        #
         self.context.rpc_manager.call.integrations_register_section(
             name=SECTION_NAME,
             integration_description='Manage ai integrations',
@@ -69,14 +73,22 @@ class Module(module.ModuleModel):
             section=SECTION_NAME,
             settings_model=IntegrationModel,
         )
-
+        #
         vault_client = VaultClient()
         secrets = vault_client.get_all_secrets()
         if 'open_ai_azure_token_limits' not in secrets:
             secrets['open_ai_azure_token_limits'] = json.dumps(TOKEN_LIMITS)
             vault_client.set_secrets(secrets)
+        #
+        # Managed identity AD token
+        #
+        if "open_ai_azure_ad_token" in secrets:
+            log.info("Using managed identity / AD for token")
+            self.ad_token_provider = get_bearer_token_provider(
+                DefaultAzureCredential(), secrets["open_ai_azure_ad_token"]
+            )
 
 
-    def deinit(self):  # pylint: disable=R0201
+    def deinit(self):
         """ De-init module """
         log.info('De-initializing')
