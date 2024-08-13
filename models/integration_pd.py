@@ -2,7 +2,7 @@ import json
 from typing import List, Optional
 from pydantic import BaseModel, root_validator, validator
 
-from tools import session_project, rpc_tools, VaultClient
+from tools import session_project, rpc_tools, VaultClient, worker_client, this, context
 from pylon.core.tools import log
 from ...integrations.models.pd.integration import SecretField
 
@@ -66,43 +66,19 @@ class IntegrationModel(BaseModel):
     def check_connection(self, project_id=None):
         if not project_id:
             project_id = session_project.get()
-        api_key = self.api_token.unsecret(project_id)
-        api_type = self.api_type
-        api_version = self.api_version
-        api_base = self.api_base
-        try:
-            # openai < 1.0.0
-            from openai import Model
-            Model.list(
-                api_key=api_key, api_base=api_base, api_type=api_type, api_version=api_version
-                )
-        except Exception as e:
-            # openai >= 1.0.0
-            try:
-                from openai import AzureOpenAI
-                #
-                from tools import context
-                module = context.module_manager.module.open_ai_azure
-                #
-                if module.ad_token_provider is None:
-                    client = AzureOpenAI(
-                        base_url=api_base,
-                        api_version=api_version,
-                        api_key=api_key,
-                        # api_type is removed in openai >= 1.0.0
-                    )
-                else:
-                    client = AzureOpenAI(
-                        base_url=api_base,
-                        api_version=api_version,
-                        azure_ad_token_provider=module.ad_token_provider,
-                    )
-                #
-                client.models.list()
-            except Exception as e:
-                log.error(e)
-                return str(e)
-        return True
+        #
+        settings = self.dict()
+        #
+        module = context.module_manager.module.open_ai_azure
+        if module.ad_token_provider is None:
+            settings["api_token"] = self.api_token.unsecret(project_id)
+        else:
+            settings["azure_ad_token"] = module.ad_token_provider()
+        #
+        return worker_client.ai_check_settings(
+            integration_name=this.module_name,
+            settings=settings,
+        )
 
     def refresh_models(self, project_id):
         integration_name = 'open_ai_azure'
