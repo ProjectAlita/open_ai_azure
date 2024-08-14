@@ -495,7 +495,13 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            auth_kwargs["api_key"] = settings["settings"]["api_token"]
+            api_token = SecretField.parse_obj(settings["settings"]["api_token"])
+            try:
+                api_token = api_token.unsecret(settings["project_id"])
+            except KeyError:
+                api_token = api_token.unsecret(None)
+            #
+            auth_kwargs["api_key"] = api_token
         else:
             auth_kwargs["azure_ad_token"] = module.ad_token_provider()
         #
