@@ -45,7 +45,7 @@ class IntegrationModel(BaseModel):
     api_base: str = "https://ai-proxy.lab.epam.com"
     api_type: str = "azure"
     temperature: float = 0
-    max_tokens: int = 7
+    max_tokens: int = 512
     top_p: float = 0.8
     stream: bool = False
 
