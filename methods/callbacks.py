@@ -120,10 +120,17 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             self, settings, data,
         ):
         """ Count input/output/data tokens """
+        #
+        model_parameters = {}
+        #
+        for param in ["max_tokens", "temperature", "top_p"]:
+            if param in settings.merged_settings:
+                model_parameters[param] = settings.merged_settings[param]
+        #
         target_kwargs = {
             "model": settings.merged_settings["model_name"],
-            "temperature": settings.merged_settings["temperature"],
-            "max_tokens": settings.merged_settings["max_tokens"],
+            #
+            **model_parameters,
             #
             "azure_endpoint": settings.merged_settings["api_base"],
             "api_version": settings.merged_settings["api_version"],
@@ -185,10 +192,17 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             self, settings, text,
         ):
         """ Call model """
+        #
+        model_parameters = {}
+        #
+        for param in ["max_tokens", "temperature", "top_p"]:
+            if param in settings.merged_settings:
+                model_parameters[param] = settings.merged_settings[param]
+        #
         target_kwargs = {
             "model": settings.merged_settings["model_name"],
-            "temperature": settings.merged_settings["temperature"],
-            "max_tokens": settings.merged_settings["max_tokens"],
+            #
+            **model_parameters,
             #
             "azure_endpoint": settings.merged_settings["api_base"],
             "api_version": settings.merged_settings["api_version"],
@@ -233,10 +247,17 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             self, settings, text, stream_id,
         ):
         """ Stream model """
+        #
+        model_parameters = {}
+        #
+        for param in ["max_tokens", "temperature", "top_p"]:
+            if param in settings.merged_settings:
+                model_parameters[param] = settings.merged_settings[param]
+        #
         target_kwargs = {
             "model": settings.merged_settings["model_name"],
-            "temperature": settings.merged_settings["temperature"],
-            "max_tokens": settings.merged_settings["max_tokens"],
+            #
+            **model_parameters,
             #
             "azure_endpoint": settings.merged_settings["api_base"],
             "api_version": settings.merged_settings["api_version"],
@@ -288,10 +309,17 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             self, settings, messages,
         ):
         """ Call model """
+        #
+        model_parameters = {}
+        #
+        for param in ["max_tokens", "temperature", "top_p"]:
+            if param in settings.merged_settings:
+                model_parameters[param] = settings.merged_settings[param]
+        #
         target_kwargs = {
             "model": settings.merged_settings["model_name"],
-            "temperature": settings.merged_settings["temperature"],
-            "max_tokens": settings.merged_settings["max_tokens"],
+            #
+            **model_parameters,
             #
             "azure_endpoint": settings.merged_settings["api_base"],
             "api_version": settings.merged_settings["api_version"],
@@ -336,10 +364,17 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             self, settings, messages, stream_id,
         ):
         """ Stream model """
+        #
+        model_parameters = {}
+        #
+        for param in ["max_tokens", "temperature", "top_p"]:
+            if param in settings.merged_settings:
+                model_parameters[param] = settings.merged_settings[param]
+        #
         target_kwargs = {
             "model": settings.merged_settings["model_name"],
-            "temperature": settings.merged_settings["temperature"],
-            "max_tokens": settings.merged_settings["max_tokens"],
+            #
+            **model_parameters,
             #
             "azure_endpoint": settings.merged_settings["api_base"],
             "api_version": settings.merged_settings["api_version"],
@@ -476,8 +511,6 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         ):
         """ Make indexer config """
         #
-        log.debug(f"{settings=}")
-        #
         model_info = None
         #
         for item in settings["settings"]["models"]:
@@ -517,15 +550,19 @@ class Method:  # pylint: disable=E1101,R0903,W0201
                 },
             }
         #
+        model_parameters = {}
+        #
+        for param in ["max_tokens", "temperature", "top_p"]:
+            if param in settings["settings"]:
+                model_parameters[param] = settings["settings"][param]
+        #
         if not model_info["capabilities"]["chat_completion"]:
             return {
                 "ai_model": "langchain_openai.llms.azure.AzureOpenAI",
                 "ai_model_params": {
                     "model": model,
                     #
-                    "temperature": settings["settings"]["temperature"],
-                    "max_tokens": settings["settings"]["max_tokens"],
-                    #
+                    **model_parameters,
                     **auth_kwargs,
                 },
             }
@@ -535,9 +572,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             "ai_model_params": {
                 "model": model,
                 #
-                "temperature": settings["settings"]["temperature"],
-                "max_tokens": settings["settings"]["max_tokens"],
-                #
+                **model_parameters,
                 **auth_kwargs,
             },
         }
