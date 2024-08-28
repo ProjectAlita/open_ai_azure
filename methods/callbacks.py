@@ -22,9 +22,7 @@ import json
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from pylon.core.tools import web  # pylint: disable=E0611,E0401,W0611
 
-from tools import context  # pylint: disable=E0611,E0401
-
-from tools import SecretString
+from tools import context, worker_client  # pylint: disable=E0611,E0401
 
 
 class Method:  # pylint: disable=E1101,R0903,W0201
@@ -138,11 +136,14 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretString.parse_obj(settings.merged_settings["api_token"])
             try:
-                api_token = api_token.unsecret(settings.integration.project_id)
+                project_id = settings.integration.project_id
             except AttributeError:
-                api_token = api_token.unsecret(None)
+                project_id = None
+            #
+            api_token = worker_client.unsecret_data(
+                settings.merged_settings["api_token"], project_id
+            )
             #
             target_kwargs["api_key"] = api_token
         else:
@@ -210,11 +211,14 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretString(settings.merged_settings["api_token"])
             try:
-                api_token = api_token.unsecret(settings.integration.project_id)
+                project_id = settings.integration.project_id
             except AttributeError:
-                api_token = api_token.unsecret(None)
+                project_id = None
+            #
+            api_token = worker_client.unsecret_data(
+                settings.merged_settings["api_token"], project_id
+            )
             #
             target_kwargs["api_key"] = api_token
         else:
@@ -267,11 +271,14 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretString(settings.merged_settings["api_token"])
             try:
-                api_token = api_token.unsecret(settings.integration.project_id)
+                project_id = settings.integration.project_id
             except AttributeError:
-                api_token = api_token.unsecret(None)
+                project_id = None
+            #
+            api_token = worker_client.unsecret_data(
+                settings.merged_settings["api_token"], project_id
+            )
             #
             target_kwargs["api_key"] = api_token
         else:
@@ -327,11 +334,14 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretString(settings.merged_settings["api_token"])
             try:
-                api_token = api_token.unsecret(settings.integration.project_id)
+                project_id = settings.integration.project_id
             except AttributeError:
-                api_token = api_token.unsecret(None)
+                project_id = None
+            #
+            api_token = worker_client.unsecret_data(
+                settings.merged_settings["api_token"], project_id
+            )
             #
             target_kwargs["api_key"] = api_token
         else:
@@ -384,11 +394,14 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretString(settings.merged_settings["api_token"])
             try:
-                api_token = api_token.unsecret(settings.integration.project_id)
+                project_id = settings.integration.project_id
             except AttributeError:
-                api_token = api_token.unsecret(None)
+                project_id = None
+            #
+            api_token = worker_client.unsecret_data(
+                settings.merged_settings["api_token"], project_id
+            )
             #
             target_kwargs["api_key"] = api_token
         else:
@@ -528,16 +541,15 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
+            #
             try:
-                tkn = settings["settings"]["api_token"].get_secret_value()
-            except AttributeError:
-                tkn = settings["settings"]["api_token"]
-
-            api_token = SecretString(tkn)
-            try:
-                api_token = api_token.unsecret(settings["project_id"])
-            except KeyError:
-                api_token = api_token.unsecret(None)
+                project_id = settings["project_id"]
+            except (AttributeError, KeyError):
+                project_id = None
+            #
+            api_token = worker_client.unsecret_data(
+                settings["settings"]["api_token"], project_id
+            )
             #
             auth_kwargs["api_key"] = api_token
         else:
