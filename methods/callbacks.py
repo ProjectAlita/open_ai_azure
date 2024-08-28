@@ -24,7 +24,7 @@ from pylon.core.tools import web  # pylint: disable=E0611,E0401,W0611
 
 from tools import context  # pylint: disable=E0611,E0401
 
-from plugins.integrations.models.pd.integration import SecretField  # pylint: disable=E0401
+from tools import SecretString
 
 
 class Method:  # pylint: disable=E1101,R0903,W0201
@@ -138,7 +138,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretField.parse_obj(settings.merged_settings["api_token"])
+            api_token = SecretString.parse_obj(settings.merged_settings["api_token"])
             try:
                 api_token = api_token.unsecret(settings.integration.project_id)
             except AttributeError:
@@ -210,7 +210,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretField.parse_obj(settings.merged_settings["api_token"])
+            api_token = SecretString(settings.merged_settings["api_token"])
             try:
                 api_token = api_token.unsecret(settings.integration.project_id)
             except AttributeError:
@@ -267,7 +267,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretField.parse_obj(settings.merged_settings["api_token"])
+            api_token = SecretString(settings.merged_settings["api_token"])
             try:
                 api_token = api_token.unsecret(settings.integration.project_id)
             except AttributeError:
@@ -327,7 +327,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretField.parse_obj(settings.merged_settings["api_token"])
+            api_token = SecretString(settings.merged_settings["api_token"])
             try:
                 api_token = api_token.unsecret(settings.integration.project_id)
             except AttributeError:
@@ -384,7 +384,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretField.parse_obj(settings.merged_settings["api_token"])
+            api_token = SecretString(settings.merged_settings["api_token"])
             try:
                 api_token = api_token.unsecret(settings.integration.project_id)
             except AttributeError:
@@ -528,9 +528,12 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            api_token = SecretField.parse_obj(
-                settings["settings"]["api_token"].get_secret_value()
-            )
+            try:
+                tkn = settings["settings"]["api_token"].get_secret_value()
+            except AttributeError:
+                tkn = settings["settings"]["api_token"]
+
+            api_token = SecretString(tkn)
             try:
                 api_token = api_token.unsecret(settings["project_id"])
             except KeyError:
