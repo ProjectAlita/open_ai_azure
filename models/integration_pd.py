@@ -94,6 +94,6 @@ class AzureOpenAISettings(BaseModel):
     model_name: str = 'gpt-35-turbo'
     api_version: str = '2023-03-15-preview'
     api_base: str = "https://ai-proxy.lab.epam.com"
-    temperature: float = 0
-    max_tokens: int = 7
+    temperature: float = 0.3
+    max_tokens: int = 2048
     top_p: float = 0.8
