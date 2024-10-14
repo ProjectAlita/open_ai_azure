@@ -539,8 +539,15 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             "api_version": settings["settings"]["api_version"],
         }
         #
+        additonal_kwargs = {}
+        #
+        indexer_use_ad_token_provider = self.descriptor.config.get(
+            "indexer_use_ad_token_provider", False
+        )
+        #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
+            indexer_use_ad_token_provider = False
             #
             try:
                 project_id = settings["project_id"]
@@ -552,10 +559,16 @@ class Method:  # pylint: disable=E1101,R0903,W0201
             )
             #
             auth_kwargs["api_key"] = api_token
+        elif indexer_use_ad_token_provider:
+            pass
         else:
             auth_kwargs["azure_ad_token"] = module.ad_token_provider()
         #
         if model_info["capabilities"]["embeddings"]:
+            if indexer_use_ad_token_provider:
+                additonal_kwargs["embeddings_ad_token_provider"] = True
+                additonal_kwargs["embeddings_ad_token_scope"] = self.ad_token_scope
+            #
             return {
                 "embedding_model": "langchain_openai.embeddings.azure.AzureOpenAIEmbeddings",
                 "embedding_model_params": {
@@ -563,6 +576,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
                     #
                     **auth_kwargs,
                 },
+                **additonal_kwargs,
             }
         #
         model_parameters = {}
@@ -570,6 +584,10 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         for param in ["max_tokens", "temperature", "top_p"]:
             if param in settings["settings"]:
                 model_parameters[param] = settings["settings"][param]
+        #
+        if indexer_use_ad_token_provider:
+            additonal_kwargs["ai_ad_token_provider"] = True
+            additonal_kwargs["ai_ad_token_scope"] = self.ad_token_scope
         #
         if not model_info["capabilities"]["chat_completion"]:
             return {
@@ -580,6 +598,7 @@ class Method:  # pylint: disable=E1101,R0903,W0201
                     **model_parameters,
                     **auth_kwargs,
                 },
+                **additonal_kwargs,
             }
         #
         return {
@@ -590,4 +609,5 @@ class Method:  # pylint: disable=E1101,R0903,W0201
                 **model_parameters,
                 **auth_kwargs,
             },
+            **additonal_kwargs,
         }

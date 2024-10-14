@@ -54,6 +54,7 @@ class Module(module.ModuleModel):
         self.context = context
         self.descriptor = descriptor
         #
+        self.ad_token_scope = None
         self.ad_token_provider = None
 
     def init(self):
@@ -83,8 +84,10 @@ class Module(module.ModuleModel):
         #
         if "open_ai_azure_ad_token" in secrets:
             log.info("Using managed identity / AD for token")
+            #
+            self.ad_token_scope = secrets["open_ai_azure_ad_token"]
             self.ad_token_provider = get_bearer_token_provider(
-                DefaultAzureCredential(), secrets["open_ai_azure_ad_token"]
+                DefaultAzureCredential(), self.ad_token_scope
             )
         #
         worker_client.register_integration(
