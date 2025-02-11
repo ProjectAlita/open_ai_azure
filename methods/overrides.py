@@ -43,7 +43,21 @@ class Method:  # pylint: disable=E1101,R0903,W0201
         result = parameters.copy()
         #
         if model in self.descriptor.config.get("apply_o1_overrides_for", []):
-            if "max_tokens" in result:
-                result["max_completion_tokens"] = result.pop("max_tokens")
+            remap_keys = {
+                "max_tokens": "max_completion_tokens",
+            }
+            #
+            drop_keys = [
+                "temperature",
+                "top_p",
+            ]
+            #
+            for key, target in remap_keys.items():
+                if key in result:
+                    result[target] = result.pop(key)
+            #
+            for key in drop_keys:
+                if key in result:
+                    result.pop(key)
         #
         return result
