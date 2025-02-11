@@ -1,6 +1,10 @@
 import json
 from typing import List, Optional
-from pydantic.v1 import BaseModel, root_validator, validator
+
+try:
+    from pydantic.v1 import BaseModel, root_validator, validator
+except:  # pylint: disable=W0702
+    from pydantic import BaseModel, root_validator, validator
 
 from tools import session_project, rpc_tools, VaultClient, worker_client, this, context
 from pylon.core.tools import log

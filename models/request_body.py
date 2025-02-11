@@ -1,14 +1,25 @@
 from enum import Enum
 from typing import Optional, List, Union, Any, Mapping
 
-from pydantic.v1 import (
-    BaseModel,
-    StrictStr,
-    ConstrainedFloat,
-    ConstrainedInt,
-    ConstrainedList,
-    PositiveInt,
-)
+try:
+    from pydantic.v1 import (
+        BaseModel,
+        StrictStr,
+        ConstrainedFloat,
+        ConstrainedInt,
+        ConstrainedList,
+        PositiveInt,
+    )
+except:  # pylint: disable=W0702
+    from pydantic import (
+        BaseModel,
+        StrictStr,
+        ConstrainedFloat,
+        ConstrainedInt,
+        ConstrainedList,
+        PositiveInt,
+    )
+
 from pylon.core.tools import log
 
 

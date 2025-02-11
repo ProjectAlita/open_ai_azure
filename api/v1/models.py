@@ -1,5 +1,10 @@
 from flask import request
-from pydantic.v1 import ValidationError
+
+try:
+    from pydantic.v1 import ValidationError
+except:  # pylint: disable=W0702
+    from pydantic import ValidationError
+
 from tools import api_tools
 
 from ...models.integration_pd import IntegrationModel
