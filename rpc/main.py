@@ -6,7 +6,7 @@ from tools import rpc_tools, worker_client, this, context
 from ..models.integration_pd import AIModel, AzureOpenAISettings
 from ...integrations.models.pd.integration import SecretField
 from ..utils import predict_chat, predict_text, predict_chat_from_request, predict_from_request
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 
 class RPC:

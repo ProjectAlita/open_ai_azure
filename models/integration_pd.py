@@ -1,6 +1,6 @@
 import json
 from typing import List, Optional
-from pydantic import BaseModel, root_validator, validator
+from pydantic.v1 import BaseModel, root_validator, validator
 
 from tools import session_project, rpc_tools, VaultClient, worker_client, this, context
 from pylon.core.tools import log
