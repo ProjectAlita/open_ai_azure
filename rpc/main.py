@@ -2,9 +2,8 @@ from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web
 from traceback import format_exc
 
-from tools import rpc_tools, worker_client, this, context
+from tools import rpc_tools, worker_client, this, context, SecretString
 from ..models.integration_pd import AIModel, AzureOpenAISettings
-from ...integrations.models.pd.integration import SecretField
 from ..utils import predict_chat, predict_text, predict_chat_from_request, predict_from_request
 
 try:
@@ -83,10 +82,10 @@ class RPC:
         #
         module = context.module_manager.module.open_ai_azure
         if module.ad_token_provider is None:
-            if isinstance(payload['settings'].get('api_token', {}), SecretField):
+            if isinstance(payload['settings'].get('api_token', {}), SecretString):
                 token_field = payload['settings'].get('api_token')
             else:
-                token_field = SecretField.parse_obj(
+                token_field = SecretString(
                     payload['settings'].get('api_token', {})
                 )
             #

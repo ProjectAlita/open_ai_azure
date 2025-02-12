@@ -6,9 +6,8 @@ try:
 except:  # pylint: disable=W0702
     from pydantic import BaseModel, root_validator, validator
 
-from tools import session_project, rpc_tools, VaultClient, worker_client, this, context
+from tools import session_project, rpc_tools, VaultClient, worker_client, this, context, SecretString
 from pylon.core.tools import log
-from ...integrations.models.pd.integration import SecretField
 
 
 def get_token_limits():
@@ -42,7 +41,7 @@ class AIModel(BaseModel):
 
 
 class IntegrationModel(BaseModel):
-    api_token: SecretField | str
+    api_token: SecretString | str
     model_name: str = 'gpt-35-turbo'
     models: List[AIModel] = []
     api_version: str = '2023-03-15-preview'
